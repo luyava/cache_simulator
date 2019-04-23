@@ -50,6 +50,7 @@ int main(int argc, char **argv){
 	  
 	}
 	printf("------------------------------------\n");
+	printf("Parametros ingresados: \n");
 	printf("cache = %i \n",cache);
 	printf("linea= %i \n",linea);
 	printf("asoc= %i \n",asoc);
@@ -59,18 +60,23 @@ int main(int argc, char **argv){
 
 
 	//Llamado rutina de impresion de parametros de las cache
-	cache=cache*1000;//conversion de KB a B
+	cache=cache*1024;//conversion de KB a B
 
 	Parametros p;
 
 	offset= p.m_offset(cache);
 	bloque= p.m_bloque(cache,linea);
-	p.m_asoc(asoc);//esta imprimiendo valores random revisar!!!
 	index= p.m_index(cache,bloque,asoc);
 	tag= p.m_tag(linea,offset,index);
-	p.imprimirpar();
 	
-
+	cout <<"Parametros obtenidos: "<<endl;
+	cout <<"Offset: "<<offset <<endl;
+	cout <<"Bloques: "<<bloque <<endl;
+	cout <<"Asociatividad: "<<asoc<<endl;
+	cout <<"Index: "<<index <<endl;
+	cout <<"Tag: "<<tag <<endl;
+	cout <<"Cache"<<cache<<endl;
+	cout <<"------------------------------------- " <<endl;
 
 //////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////
@@ -78,12 +84,11 @@ int main(int argc, char **argv){
 
 /////////////lectura del trace y obtencion del index y tag
 
-	cout <<"asoc: "<<asoc<<endl;
-	cout << "cache"<<cache<<endl;
+	
 ///declaracion de algunas variables
  string numeral,ls,dir,ic; //componentes de cada linea del trace
  int accesos,rnd;
- unsigned int vindex, vtag,s;
+ unsigned int vindex, vtag,s,sic;
  unsigned long int totalIC=0;
  unsigned int c[cache][asoc];
  long int lmiss,smiss,sthit,lhit,load_counter,store_counter;
@@ -99,6 +104,7 @@ if(numeral.compare("")==0){ //rompe el ciclo cuando se acaban las inst
 	break;}
  
 s=stoi(dir,nullptr,16); //convierte la direccion de string a int
+sic=stoi(ic,nullptr,16);//string a int en ic
 
 /////////////////////inicio mascaras
 
@@ -107,9 +113,8 @@ s=s>>offset; //se obtiene el valor del index con sll y srl
 s=s<<(offset + tag);
 vindex=s>>(offset + tag);
 vtag= s >> (index + tag);
-//totalIC=totalIC+ic;  No funciona!!!!!!!!!!!!!!!!!!!!!!!
-
- cout <<"el ls: "<< ls<<endl;
+ 
+totalIC=totalIC+sic;  
 
 /////////////////////////////politica random
 
@@ -123,13 +128,9 @@ vtag= s >> (index + tag);
  }
  
  if(ls.compare("1")==0){     //store
-   cout<<"estoy dentro"<<endl;
-   // store_counter=store_counter+1;
+   store_counter=store_counter+1;
    for (int i = 0; i < asoc-1; i++){
-     cout<<"estoy en el for"<<endl;
-     cout<< "vindex " << vindex<< " i "<<i<<" c[][] " <<endl;
      if(c[vindex][i]==vtag){
-       cout<<"estoy en el if"<<endl;
        sthit = sthit+1;
        break;}
    }
@@ -138,12 +139,17 @@ vtag= s >> (index + tag);
  }
 }
 
-// lmiss=load_counter-lhit;
-// smiss=store_counter-smiss;
-
-//cout << "IC total: "<< totalIC<< endl;
-
-
+ lmiss=load_counter-lhit;
+ smiss=store_counter-sthit;
+ cout <<":::::::::::::::::::::::::::::::::::::::::: "<<endl;
+ cout <<"Estadisticas: " <<endl;
+ cout << "IC total: "<< totalIC<< endl;
+ cout << "Total de accesos: "<<accesos << endl;
+ cout << "Total de misses en load: "<<lmiss << endl;
+ cout << "Total de hits en load: "<<lhit << endl;
+ cout << "Total de misses en store: "<<smiss << endl;
+ cout << "Total de hits en store: "<<sthit << endl;
+ cout <<":::::::::::::::::::::::::::::::::::::::::: "<<endl;
  
 /////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////
@@ -156,3 +162,28 @@ vtag= s >> (index + tag);
 
 //anotaciones de tiempos:
 //recorre el trace haciendo mascaras en 5.528 s
+/*Parametros ingresados: (Politica Random)
+cache = 16 
+linea= 32 
+asoc= 2 
+rp= 0 
+----------------------------------------
+Parametros obtenidos: 
+Offset: 14
+Bloques: 512
+Asociatividad: 2
+Index: 4
+Tag: 14
+Cache16384
+------------------------------------- 
+:::::::::::::::::::::::::::::::::::::::::: 
+Estadisticas: 
+IC total: 20603103
+Total de accesos: 6943858
+Total de misses en load: 4809191
+Total de hits en load: 780282
+Total de misses en store: 1110023
+Total de hits en store: 244362
+:::::::::::::::::::::::::::::::::::::::::: 
+Tiempo de ejecución: 6.14 s
+*/

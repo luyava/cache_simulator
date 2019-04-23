@@ -28,7 +28,7 @@ class Parametros{
     cout<<asoc1<<endl;
   }
   int m_index(int cache1, int bloque1, int asoc1){
-    index1=(cache1/(bloque1*asoc1));
+    index1=log2(cache1/(bloque1*asoc1));
     return index1;
   }
   int m_tag(int linea1, int offset1, int index1){
