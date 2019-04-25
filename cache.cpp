@@ -75,7 +75,7 @@ int main(int argc, char **argv){
 	cout <<"Asociatividad: "<<asoc<<endl;
 	cout <<"Index: "<<index <<endl;
 	cout <<"Tag: "<<tag <<endl;
-	cout <<"Cache"<<cache<<endl;
+	cout <<"Cache: "<<cache<<endl;
 	cout <<"------------------------------------- " <<endl;
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -87,58 +87,148 @@ int main(int argc, char **argv){
 	
 ///declaracion de algunas variables
  string numeral,ls,dir,ic; //componentes de cada linea del trace
- int accesos,rnd;
- unsigned int vindex, vtag,s,sic;
+ int accesos,rnd,hit_flag,hit, prueba;
+ unsigned int vindex, vtag,s,sic,vswap;
  unsigned long int totalIC=0;
  unsigned int c[cache][asoc];
  long int lmiss,smiss,sthit,lhit,load_counter,store_counter;
-	
-while(!cin.eof()){
-accesos=accesos+1;	
-cin>>numeral; //recibe dato del trace
-cin>>ls; //load o store
-cin>>dir; //direccion
-cin>>ic; //instruction counter
+ ///////////////////////////////////////////////////////////
 
-if(numeral.compare("")==0){ //rompe el ciclo cuando se acaban las inst
-	break;}
+ ///////selector de politica de reemplazo
  
-s=stoi(dir,nullptr,16); //convierte la direccion de string a int
-sic=stoi(ic,nullptr,16);//string a int en ic
-
-/////////////////////inicio mascaras
-
-
-s=s>>offset; //se obtiene el valor del index con sll y srl
-s=s<<(offset + tag);
-vindex=s>>(offset + tag);
-vtag= s >> (index + tag);
+ if(rp==0){ //inicia politica random
+   cout<<"Politica de reemplazo Random"<<endl;
  
-totalIC=totalIC+sic;  
+   while(!cin.eof()){
+     accesos=accesos+1;	
+     cin>>numeral; //recibe dato del trace
+     cin>>ls; //load o store
+     cin>>dir; //direccion
+     cin>>ic; //instruction counter
 
-/////////////////////////////politica random
-
- if(ls.compare("0")==0){     //load
-   load_counter=load_counter+1;
-   for (int i = 0; i < asoc-1; i++){
-     if(c[vindex][i]==vtag){
-       lhit = lhit+1;
+     if(numeral.compare("")==0){ //rompe el ciclo cuando se acaban las inst
        break;}
-   }
- }
  
- if(ls.compare("1")==0){     //store
-   store_counter=store_counter+1;
-   for (int i = 0; i < asoc-1; i++){
-     if(c[vindex][i]==vtag){
-       sthit = sthit+1;
-       break;}
-   }
-   rnd=rand() % asoc +1;
-   c[vindex][rnd]=vtag; 
- }
-}
+     s=stoi(dir,nullptr,16); //convierte la direccion de string a int
+     sic=stoi(ic,nullptr,16);//string a int en ic
 
+     /////////////////////inicio mascaras
+
+
+     s=s>>offset; //se obtiene el valor del index con sll y srl
+     s=s<<(offset + tag);
+     vindex=s>>(offset + tag);
+     vtag= s >> (index + tag);
+ 
+     totalIC=totalIC+sic;  
+
+     /////////////////////////////politica random
+
+     if(ls.compare("0")==0){     //load
+       load_counter=load_counter+1;
+       for (int i = 0; i < asoc-1; i++){
+	 if(c[vindex][i]==vtag){
+	   lhit = lhit+1;
+	   break;}
+       }
+     }
+ 
+     if(ls.compare("1")==0){     //store
+       store_counter=store_counter+1;
+       for (int i = 0; i < asoc-1; i++){
+	 if(c[vindex][i]==vtag){
+	   sthit = sthit+1;
+	   break;}
+       }
+       rnd=rand() % asoc +1;
+       c[vindex][rnd]=vtag; 
+     }
+   }
+
+ }//fin politica random
+ /////////////////////////////////////////////////////////////////////////////////////
+ else if(rp==1){ //politica LRU
+   cout<<"Politica de reemplazo LRU"<<endl;
+ while(!cin.eof()){
+     accesos=accesos+1;	
+     cin>>numeral; //recibe dato del trace
+     cin>>ls; //load o store
+     cin>>dir; //direccion
+     cin>>ic; //instruction counter
+
+     if(numeral.compare("")==0){ //rompe el ciclo cuando se acaban las inst
+       break;}
+ 
+     s=stoi(dir,nullptr,16); //convierte la direccion de string a int
+     sic=stoi(ic,nullptr,16);//string a int en ic
+     hit_flag=0; ///bandera para metodo de hits
+     /////////////////////inicio mascaras
+
+
+     s=s>>offset; //se obtiene el valor del index con sll y srl
+     s=s<<(offset + tag);
+     vindex=s>>(offset + tag);
+     vtag= s >> (index + tag);
+ 
+     totalIC=totalIC+sic;  
+
+     /////////////////////////////politica random
+
+     if(ls.compare("0")==0){     //load
+       load_counter=load_counter+1;
+       for (int i = 0; i < asoc-1; i++){
+	 if(c[vindex][i]==vtag){
+	   lhit = lhit+1;
+	   break;}
+       }
+       /*si hay un miss en load se llamara el dato segun protocolo */
+     }
+ 
+     if(ls.compare("1")==0){     //store
+       store_counter=store_counter+1;
+       hit=0;
+       for (int i = 0; i < asoc-1; i++){
+	 hit=hit+1;
+	 if(c[vindex][i]==vtag){
+	   sthit = sthit+1;
+	   hit_flag=1;
+	   break;}
+       }
+       if(hit_flag==0){//inicio swap en miss
+	 for (int j=(asoc-1);(j=0);j--){
+	   c[vindex][j]=c[vindex][j-1];
+	 }
+	 c[vindex][0]=vtag;
+       }//fin swap en miss
+       else{//inicio swap en hit (promocion)
+	 prueba=hit;
+	 //busca la posicion del hit y de ahi hace swaps a la izquierda
+	 for(hit=prueba;hit==1;hit--){//si el hit es en la posicion c[vindex][0]no hace nada por eso i=1
+	   vswap=c[vindex][hit-1];
+	   c[vindex][hit-1]=c[vindex][hit];
+	   c[vindex][hit]=vswap;
+	 }
+       }//fin swap en hit (promocion)
+     }//fin store
+ }//fin cin del trace
+   
+ }//fin politica LRU
+ //////////////////////////////////////////////////////////////////////////////////////
+ 
+ else if(rp==2){ //politica RRIP
+   cout<<"Politica de reemplazo RRIP"<<endl;
+ }//fin politica RRIP
+ //////////////////////////////////////////////////////////////////////////////////////
+ 
+ else{
+   cout<<"Politica de reemplazo no disponible"<<endl;
+   exit(0);
+ }
+ ///////////////////////////////////////////////////////////////////////////////////////
+
+
+ ////inicio estadisticas
+ 
  lmiss=load_counter-lhit;
  smiss=store_counter-sthit;
  cout <<":::::::::::::::::::::::::::::::::::::::::: "<<endl;
@@ -158,32 +248,6 @@ totalIC=totalIC+sic;
  cout<<"Maestro, he terminado"<<endl;
  exit(0);
 
-}
+}//fin del programa
 
-//anotaciones de tiempos:
-//recorre el trace haciendo mascaras en 5.528 s
-/*Parametros ingresados: (Politica Random)
-cache = 16 
-linea= 32 
-asoc= 2 
-rp= 0 
-----------------------------------------
-Parametros obtenidos: 
-Offset: 14
-Bloques: 512
-Asociatividad: 2
-Index: 4
-Tag: 14
-Cache16384
-------------------------------------- 
-:::::::::::::::::::::::::::::::::::::::::: 
-Estadisticas: 
-IC total: 20603103
-Total de accesos: 6943858
-Total de misses en load: 4809191
-Total de hits en load: 780282
-Total de misses en store: 1110023
-Total de hits en store: 244362
-:::::::::::::::::::::::::::::::::::::::::: 
-Tiempo de ejecución: 6.14 s
-*/
+
