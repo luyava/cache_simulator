@@ -18,7 +18,7 @@ using namespace std;
 int main(int argc, char **argv){
 	clock_t cl=clock();
 	string str1 ("h"), str2("-t"), str3("-l"), str4("-a"), str5("-rp");
-	int temp,cache,linea,asoc1,rp;
+	int temp,cache,linea,asoc,rp;
 	int offset,bloque, index, tag;
 
 	for(int i=1; i<argc; i++){
@@ -42,7 +42,7 @@ int main(int argc, char **argv){
 	      linea = temp;}
 	    if (str4.compare(argv[i]) == 0) {
 	      temp = atoi(argv[i+1]);
-	      asoc1 = temp;}
+	      asoc = temp;}
 	    if (str5.compare(argv[i]) == 0) {//rp 0:LRU,1:NRU,2:RRIP,3:RANDOM
 	      temp = atoi(argv[i+1]);
 	      rp = temp;}
@@ -53,7 +53,7 @@ int main(int argc, char **argv){
 	printf("Parametros ingresados: \n");
 	printf("cache = %i \n",cache);
 	printf("linea= %i \n",linea);
-	printf("asoc1= %i \n",asoc1);
+	printf("asoc= %i \n",asoc);
 	printf("rp= %i \n",rp);
 
 	cout<<"----------------------------------------"<<endl;
@@ -61,7 +61,6 @@ int main(int argc, char **argv){
 
 	//Llamado rutina de impresion de parametros de las cache
 	cache=cache*1024;//conversion de KB a B
-	 int const asoc=asoc1;
 
 	Parametros p;
 
@@ -93,15 +92,6 @@ int main(int argc, char **argv){
  unsigned long int totalIC=0;
  unsigned int c[cache][asoc];
  long int lmiss,smiss,sthit,lhit,load_counter,store_counter;
- 
- struct entry{
-  unsigned int stag[2];
-  uint8_t old[2];
-  bool dirty=false;
-  bool valid=true; 
-}line;
-
-struct entry cch[cache];
  ///////////////////////////////////////////////////////////
 
  ///////selector de politica de reemplazo
@@ -182,13 +172,12 @@ struct entry cch[cache];
  
      totalIC=totalIC+sic;  
 
-     /////////////////////////////politica lru
+     /////////////////////////////politica random
 
      if(ls.compare("0")==0){     //load
        load_counter=load_counter+1;
-       struct entry line=cch[vindex];
        for (int i = 0; i < asoc-1; i++){
-	 if(line.stag[i]==vtag){
+	 if(c[vindex][i]==vtag){
 	   lhit = lhit+1;
 	   break;}
        }
@@ -199,30 +188,28 @@ struct entry cch[cache];
        store_counter=store_counter+1;
        hit=0;
        hit_flag=0;
-       struct entry line=cch[vindex];
        for (int i = 0; i < asoc-1; i++){
-	 hit=hit+1;//es igual i para debug
-	 if(line.stag[i]==vtag){//hit en store
+	 hit=hit+1;
+	 if(c[vindex][i]==vtag){
 	   sthit = sthit+1;
 	   hit_flag=1;
-	   line.old[i]=line.old[i]-2;//rejuvence el del hit
-	   for(int k=0;k==(asoc-1);k++){//este hace que los que no son hit envejezcan
-	     line.old[k]=line.old[k]+1;
-	   }//fin for
-	   if(line.old[i]<0){line.old[i]=0;}//asegura que no haya valores negativos
 	   break;}
        }
-       if(hit_flag==0){//inicio store en miss
-	 int maximo=0;
-	 int tracker=0;
-	 for (int j=0; j==(asoc-1);j++){//detecta el mas viejo
-	   if(line.old[j]>maximo){
-	     maximo=line.old[j];
-	     tracker=j;
-	       }
-	 }//fin for detector de viejos
-	 line.stag[tracker]=vtag;
-       }//fin store en miss
+       if(hit_flag==0){//inicio swap en miss
+	 for (int j=(asoc-1);(j=0);j--){
+	   c[vindex][j]=c[vindex][j-1];
+	 }
+	 c[vindex][0]=vtag;
+       }//fin swap en miss
+       else{//inicio swap en hit (promocion)
+	 prueba=hit;
+	 //busca la posicion del hit y de ahi hace swaps a la izquierda
+	 for(hit=prueba;hit==1;hit--){//si el hit es en la posicion c[vindex][0]no hace nada por eso i=1
+	   vswap=c[vindex][hit-1];
+	   c[vindex][hit-1]=c[vindex][hit];
+	   c[vindex][hit]=vswap;
+	 }
+       }//fin swap en hit (promocion)
      }//fin store
  }//fin cin del trace
    
