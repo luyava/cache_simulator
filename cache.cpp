@@ -335,6 +335,10 @@ struct entry cch[cache];
  cout << "Total de hits en load: "<<lhit << endl;
  cout << "Total de misses en store: "<<smiss << endl;
  cout << "Total de hits en store: "<<sthit << endl;
+ //cout <<"Miss rate en load: "<<(lmiss/load_counter)<<endl;
+ //cout <<"Miss rate en store: "<<(smiss/store_counter)<<endl;
+ cout <<"Misses totales: "<<(lmiss+smiss)<<endl;
+ cout <<"Hits totales: "<<(lhit+sthit)<<endl;
  cout <<":::::::::::::::::::::::::::::::::::::::::: "<<endl;
  
 /////////////////////////////////////////////////////////////////////////////////
