@@ -95,10 +95,10 @@ int main(int argc, char **argv){
  long int lmiss,smiss,sthit,lhit,load_counter,store_counter;
  
  struct entry{
-  unsigned int stag[2];
-  uint8_t old[2];
-  bool dirty=false;
-  bool valid=true; 
+  unsigned int stag[4];
+  uint8_t old[4];
+  bool dirty[4];
+  bool valid[4]; 
 }line;
 
 struct entry cch[cache];
@@ -231,6 +231,88 @@ struct entry cch[cache];
  
  else if(rp==2){ //politica RRIP
    cout<<"Politica de reemplazo RRIP"<<endl;
+
+   while(!cin.eof()){
+     accesos=accesos+1;	
+     cin>>numeral; //recibe dato del trace
+     cin>>ls; //load o store
+     cin>>dir; //direccion
+     cin>>ic; //instruction counter
+
+     if(numeral.compare("")==0){ //rompe el ciclo cuando se acaban las inst
+       break;}
+ 
+     s=stoi(dir,nullptr,16); //convierte la direccion de string a int
+     sic=stoi(ic,nullptr,16);//string a int en ic
+     hit_flag=0; ///bandera para metodo de hits
+     /////////////////////inicio mascaras
+
+
+     s=s>>offset; //se obtiene el valor del index con sll y srl
+     s=s<<(offset + tag);
+     vindex=s>>(offset + tag);
+     vtag= s >> (index + tag);
+ 
+     totalIC=totalIC+sic;  
+
+     /////////////////////////////politica rrip
+
+     if(ls.compare("0")==0){     //load rrip
+       load_counter=load_counter+1;
+       struct entry line=cch[vindex];
+       for (int i = 0; i < asoc-1; i++){
+	 if(line.stag[i]==vtag){
+	   lhit = lhit+1;
+	   break;}
+       }
+       /*si hay un miss en load se llamara el dato segun protocolo */
+     }
+ 
+     if(ls.compare("1")==0){     //store
+       store_counter=store_counter+1;
+       hit=0;
+       hit_flag=0;
+       struct entry line=cch[vindex];
+       for (int i = 0; i < asoc-1; i++){
+	 hit=hit+1;//es igual i para debug
+	 if(line.stag[i]==vtag){//hit en store
+	   sthit = sthit+1;
+	   hit_flag=1;
+	   if(line.old[i]<asoc-2){
+	     line.old[i]=0;}//si hay 2 hit o mas lo rejuvence a 0
+	   else{line.old[i]=asoc-1;}//rejuvence el del hit
+	   break;}
+       }
+       if(hit_flag==0){//inicio store en miss
+	 int maximo=0;
+	 int tracker=0;
+	 for (int j=0; j==(asoc-1);j++){//detecta el mas viejo
+	   if(line.old[j]>maximo){
+	     maximo=line.old[j];
+	     tracker=j;
+	       }
+	 }//fin for detector de viejos
+	 line.stag[tracker]=vtag;//guarda el dato 
+	 line.valid[tracker]=true;
+	 int h=0;
+	 for(int k=0;k==asoc-1;k++){//detector de valid
+	   if(line.valid[k]==false){
+	     line.old[k]=3;
+	   }
+	   else {
+	     h=h+1;
+	   }//fin else
+	 }//fin for detector de valid
+	 if(h==asoc-1){
+	   for(int k=0;k==asoc-1;k++){//vejez
+	     line.old[k]=line.old[k]+1;
+	   }//fin for de vejez
+	   line.old[tracker]=line.old[tracker]-1; //esto es para que ese bit sea coherente
+	 }//fin if
+       }//fin store en miss
+     }//fin store
+ }//fin cin del trace
+ 
  }//fin politica RRIP
  //////////////////////////////////////////////////////////////////////////////////////
  
