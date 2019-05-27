@@ -12,7 +12,6 @@
 #include <bitset>
 #include <ctime>
 #include "parametros.h"
-#include "vc.cpp"
 
 using namespace std;
 
@@ -120,11 +119,16 @@ struct entry cch[cache];
      if(numeral.compare("")==0){ //rompe el ciclo cuando se acaban las inst
        break;}
  
-     ///aqui va mask
-mask(offset,tag,index,dir,ic);
-     /////////////////////inicio mascaras.
-   
-    
+     s=stoi(dir,nullptr,16); //convierte la direccion de string a int
+     sic=stoi(ic,nullptr,16);//string a int en ic
+
+     /////////////////////inicio mascaras
+
+
+     s=s>>offset; //se obtiene el valor del index con sll y srl
+     s=s<<(offset + tag);
+     vindex=s>>(offset + tag);
+     vtag= s >> (index + tag);
  
      totalIC=totalIC+sic;  
 
